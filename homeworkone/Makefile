@@ -1,4 +1,4 @@
-export tag=v1.1
+export tag=v1.3
 root:
 	export ROOT=github.com/yagamishi/golang
 
@@ -13,4 +13,4 @@ release: build
 
 push: release
 	echo "pushing cncamp/httpserver"
-	docker push yagamishi/httpserver:v1.0
+	docker push yagamishi/httpserver:${tag}

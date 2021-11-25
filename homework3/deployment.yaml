@@ -1,0 +1,65 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: httpservice-deployment
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: httpservice
+  template:
+    metadata:
+      labels:
+        app: httpservice
+    spec:
+      initContainers:
+      - name: init-cluster
+        image: busybox:1.28
+        command: ['sh', '-c', "until nslookup httpservice-clusterip.$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace).svc.cluster.local; do echo waiting for myservice; sleep 2; done"]
+      - name: init-nodeport
+        image: busybox:1.28
+        command: ['sh', '-c', "until nslookup httpservice-nodeport.$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace).svc.cluster.local; do echo waiting for mydb; sleep 2; done"]
+      volumes:
+        - name: rook-log-pv-storage
+          persistentVolumeClaim:
+            claimName: rook-log
+        - name: rook-www-pv-storage
+          persistentVolumeClaim:
+            claimName: rook-www
+      containers:
+        - name: httpservice
+          image: yagamishi/httpserver:v1.3
+          volumeMounts:
+            - mountPath: "/usr/local/httpservice/logs"
+              name: rook-log-pv-storage
+            - mountPath: "/usr/local/httpservice/www"
+              name: rook-www-pv-storage
+          resources:
+            limits:
+              memory: 2Gi
+              cpu: 1
+            requests:
+              memory: 512Mi
+              cpu: 200m
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8887
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            successThreshold: 2
+          lifecycle:
+            preStop:
+              exec:
+                command: [ "/bin/sh","-c","ps -ef |grep -w 'httpserver'|grep -v grep | awk '{print $2}' |xargs kill -3;sleep 5000" ]
+          env:
+          - name: service_address
+            valueFrom:
+              configMapKeyRef:
+                name: httpservice-cm
+                key: service_address
+          - name: service_port
+            valueFrom:
+              configMapKeyRef:
+                name: httpservice-cm
+                key: service_port

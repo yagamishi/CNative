@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: httpservice-cm
+data:
+  service_address: "0.0.0.0"
+  service_port: "8888"
