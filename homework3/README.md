@@ -21,3 +21,5 @@
 >> 挂盘：rook.png,pvc.png
 >> 网络相关：svc.png，ing-svc.png,ing.png
 >> 执行结果http,https： curl.png
+
+> 访问路径：通过外部ip(node)+ingress端口(192.168.31.199:31046)-->nginx:80-->httpservice-clusterip:8888-->最后负载均衡的pod:8887
