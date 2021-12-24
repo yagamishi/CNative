@@ -1,0 +1,46 @@
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: httpserver
+spec:
+  gateways:
+    - httpserver
+  hosts:
+    - '*'
+  http:
+  - match:
+    - uri:
+        exact: "/simple/hello"
+    rewrite:
+      uri: "/hello"
+    route:
+      - destination:
+          host: httpserver.httptracing.svc.cluster.local
+          port:
+            number: 80
+  - match:
+    - uri:
+        exact: /service0
+    route:
+      - destination:
+          host: service0.httptracing.svc.cluster.local
+          port:
+            number: 80
+---
+apiVersion: networking.istio.io/v1beta1
+kind: Gateway
+metadata:
+  name: httpserver
+spec:
+  selector:
+    istio: ingressgateway
+  servers:
+    - hosts:
+        - '*'
+      port:
+        name: https-default
+        number: 443
+        protocol: HTTPS
+      tls:
+        mode: SIMPLE
+        credentialName: https-credential
